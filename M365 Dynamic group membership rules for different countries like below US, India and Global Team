@@ -1,0 +1,30 @@
+M365 Dynamic group membership rules for different countries like below US, India and Global Team
+
+1. Global Team
+
+No service account should be added in it. 
+
+Only all US & India active users should be added in it. 
+
+membership rule: (user.accountEnabled -eq True) and (user.userType -eq "Member") and 
+(user.otherMails -notContains "Service.account@domain.com") 
+
+2. US Team
+
+No service account should be added in it. 
+
+Only US employees should be added based on UsageLocation attribute in Dynamic group which is equals to US
+
+Membership rule: (user.accountEnabled -eq True) and (user.usageLocation -eq "US") and (user.userType -eq "Member") and 
+(user.otherMails -notContains "Service.account@domain.com") 
+
+3. India Team 
+
+No service account should be added in it. 
+
+Only India employees should be added based on UsageLocation attribute in Dynamic group which is equals to IN
+
+Membership rule: (user.accountEnabled -eq True) and (user.usageLocation -eq "IN") and (user.userType -eq "Member") and 
+(user.otherMails -notContains "Service.account@domain.com") 
+
+
