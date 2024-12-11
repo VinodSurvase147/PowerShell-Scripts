@@ -1,0 +1,36 @@
+Export the report of the users who are sign-in blocked and are licenses assigned to it 
+
+# Connect to Microsoft Graph
+Connect-MgGraph -Scopes "User.Read.All"
+
+# Get all users
+$users = Get-MgUser -All -Property "accountEnabled,assignedLicenses,displayName,userPrincipalName"
+
+# Initialize an array to store blocked users with licenses
+$report = @()
+
+# Loop through each user to check if they are blocked and have licenses assigned
+foreach ($user in $users) {
+    if (-not $user.AccountEnabled -and $user.AssignedLicenses.Count -gt 0) {
+        # Collect the user's assigned license details
+        $licenseDetails = $user.AssignedLicenses | ForEach-Object { $_.SkuId }
+
+        # Add the user details to the report array
+        $report += [PSCustomObject]@{
+            DisplayName = $user.DisplayName
+            UserPrincipalName = $user.UserPrincipalName
+            AssignedLicenses = ($licenseDetails -join ", ")
+        }
+    }
+}
+
+# Define the output file path
+$outputFilePath = "D:\EmpMetadata\Jul24-RSPL\BlockedUsersWithLicenses.csv"
+
+# Export the report to a CSV file
+$report | Export-Csv -Path $outputFilePath -NoTypeInformation
+
+# Display a message indicating the report generation is complete
+Write-Output "Report generated: $outputFilePath"
+
+
