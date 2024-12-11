@@ -1,0 +1,24 @@
+This script is to setup automatic reply on user account via EXO PowerShell.
+
+# Import the module
+Import-Module ExchangeOnlineManagement
+
+# Connect to Exchange Online (if not already connected)
+Connect-ExchangeOnline
+
+# Define variables for the user and the automatic reply messages
+$userEmail = "Aroy@m365days.online"  # Replace with the target user's email
+$internalMessage = "I am currently out of the office and will respond to your email upon my return."
+$externalMessage = "Thank you for your email. I am out of the office and will respond to you as soon as I return."
+
+# Set automatic reply for internal and external senders
+Set-MailboxAutoReplyConfiguration -Identity $userEmail -AutoReplyState Enabled `
+    -InternalMessage $internalMessage `
+    -ExternalMessage $externalMessage `
+    -ExternalAudience All `
+    -StartTime "2024-09-10 09:00:00" `
+    -EndTime "2024-09-20 18:00:00"
+
+
+# Disconnect from Exchange Online
+Disconnect-ExchangeOnline -Confirm:$false
