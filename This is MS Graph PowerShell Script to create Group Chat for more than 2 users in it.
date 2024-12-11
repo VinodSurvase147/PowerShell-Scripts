@@ -1,0 +1,55 @@
+This is MS Graph PowerShell Script to create Group Chat for more than 2 users in it.
+
+Reference docs: https://learn.microsoft.com/en-us/graph/api/chat-post?view=graph-rest-1.0&tabs=powershell
+
+https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.teams/new-mgchat?view=graph-powershell-1.0
+
+https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.teams/get-mgchat?view=graph-powershell-1.0
+
+# Import Microsoft Graph Teams Module
+Import-Module Microsoft.Graph.Teams
+
+# Connect to Microsoft Graph
+Connect-MgGraph -Scopes "Group.ReadWrite.All", "Chat.ReadWrite"
+
+# Define the parameters for creating a group chat
+$params = @{
+    chatType = "group"
+    topic = "IT Group1142"
+    members = @(
+        @{
+            "@odata.type" = "#microsoft.graph.aadUserConversationMember"
+            roles = @("owner")
+            "user@odata.bind" = "https://graph.microsoft.com/v1.0/users('admin@msavnds.onmicrosoft.com')"
+        },
+        @{
+            "@odata.type" = "#microsoft.graph.aadUserConversationMember"
+            roles = @("owner")
+            "user@odata.bind" = "https://graph.microsoft.com/v1.0/users('Pratibha@m365days.online')"
+        },
+        @{
+            "@odata.type" = "#microsoft.graph.aadUserConversationMember"
+            roles = @("owner")
+            "user@odata.bind" = "https://graph.microsoft.com/v1.0/users('Akash@m365days.online')"
+        },
+        @{
+            "@odata.type" = "#microsoft.graph.aadUserConversationMember"
+            roles = @("owner")
+            "user@odata.bind" = "https://graph.microsoft.com/v1.0/users('amolroy@m365days.online')"
+        },
+        @{
+            "@odata.type" = "#microsoft.graph.aadUserConversationMember"
+            roles = @("owner")
+            "user@odata.bind" = "https://graph.microsoft.com/v1.0/users('Aroy@m365days.online')"
+        }
+    )
+}
+
+# Create the group chat
+try {
+    $chat = New-MgChat -BodyParameter $params
+    Write-Host "Created group chat with ID: $($chat.Id)"
+} catch {
+    Write-Host "Error creating group chat. Error: $_"
+}
+
