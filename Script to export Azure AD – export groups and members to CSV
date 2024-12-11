@@ -1,0 +1,28 @@
+Script to export Azure AD – export groups and members to CSV
+
+connect to azure ad powershell
+
+$allgroups = Get-AzureADGroup -All $true | select ObjectId,DisplayName
+
+$result = foreach ( $group in $allgroups ) {
+
+    $hash = @{GroupName=$group.DisplayName;Member=''}
+    $groupid = $group.ObjectId
+    
+    if ( $members = Get-AzureADGroupMember -ObjectId $groupid ) {
+            
+            foreach ( $member in $members ) {
+
+                $hash.Member = $member.DisplayName
+                New-Object psObject -Property $hash
+            }
+            }
+    else
+        {
+        $displayname = "No Members"
+        $hash.Member = $displayname
+        New-Object psObject -Property $hash
+        }
+}
+
+$result | Export-Csv -Path D:\GroupmembersImport\RedaptiveAzureADGroups.csv -NoTypeInformation
