@@ -1,0 +1,39 @@
+Export Users OneDrive URLs
+
+# Define the output CSV file path
+$outputFile = "D:\ODB-URLs\OneDriveURLs.csv"
+
+# Get all users
+$users = Get-MgUser -All
+
+# Create an array to store user data
+$userData = @()
+
+# Loop through each user and get their OneDrive URL
+foreach ($user in $users) {
+    $userPrincipalName = $user.UserPrincipalName
+    $userObject = Get-MgUser -UserId $user.Id
+    $userOneDrive = Get-MgUserDrive -UserId $userObject.Id
+    $oneDriveWebUrl = $userOneDrive.WebUrl
+
+    # Add user data to the array
+    $userData += [PSCustomObject]@{
+        SourceUser = $userPrincipalName
+        TargetUser = $userPrincipalName
+        TargetOneDriveURL = $oneDriveWebUrl
+    }
+}
+
+# Export the user data to a CSV file
+$userData | Export-Csv -Path $outputFile -NoTypeInformation
+
+======
+
+Connect-SPOService -Url https://msmsms-admin.sharepoint.com/
+
+
+$cred = Get-Credential
+
+
+Connect-PnPOnline -Url https://msmsm-admin.sharepoint.com/ -Credentials $cred
+
