@@ -10,7 +10,7 @@ c9b9b345-62c6-40f8-8a4c-f2eaba61520d
 
 Secrets
 
-47f8Q~jYIp_4NKLEFzAwDsmAb6Lm1xmxmxmxmxmxmx
+amsmsmsmsmsm.asmsma
 
 ============
 
@@ -22,7 +22,7 @@ Below script export one on one chat for Teams chats between 2 users via MS Graph
 # Replace with your Azure AD app details
 $clientId = "099b0f8a-62d3-437e-8a3f-a04f98236ed7"
 $tenantId = "c9b9b345-62c6-40f8-8a4c-f2eaba61520d"
-$clientSecret = "47f8Q~jYIp_4NKLEFzAwDsxmxxnxmxx"
+$clientSecret = "amsmsmsmsmsm.asmsma"
 
 # Token endpoint for OAuth
 $tokenEndpoint = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token"
@@ -128,7 +128,7 @@ Group chat export via MS Graph powershell
 # Replace with your Azure AD app details
 $clientId = "099b0f8a-62d3-437e-8a3f-a04f98236ed7"
 $tenantId = "c9b9b345-62c6-40f8-8a4c-f2eaba61520d"
-$clientSecret = "47f8Q~jYIp_4NKLEFzAwDsmAxmxnxxmxjjxx"
+$clientSecret = "amsmsmsmsmsm.asmsma"
 
 # Token endpoint for OAuth
 $tokenEndpoint = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token"
@@ -252,7 +252,7 @@ Install-Module Microsoft.Graph -Scope CurrentUser -Force
 # Replace with your Azure AD app details
 $clientId = "099b0f8a-62d3-437e-8a3f-a04f98236ed7"
 $tenantId = "c9b9b345-62c6-40f8-8a4c-f2eaba61520d"
-$clientSecret = "47f8Q~jYIp_4NKLEFzAwDsmAb6Lm1OFaq9e1lalq"
+$clientSecret = "amsmsmsmsmsm.asmsma"
 
 # Token endpoint for OAuth
 $tokenEndpoint = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token"
@@ -516,4 +516,3 @@ if ($chatId -ne $null) {
 } else {
     Write-Output "No group chat found with the name $groupName"
 }
-
