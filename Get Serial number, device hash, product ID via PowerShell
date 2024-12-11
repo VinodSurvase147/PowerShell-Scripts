@@ -1,0 +1,25 @@
+Get Serial number, device hash, product ID 
+
+#Get system information
+$serialNumber = Get-WmiObject win32_bios | Select-Object -ExpandProperty SerialNumber
+$productId = (Get-WmiObject -query "select * from SoftwareLicensingService").OA3xOriginalProductKey
+$hardwareHash = Get-WmiObject -Class "Win32_ComputerSystemProduct" | Select-Object -ExpandProperty UUID
+$model = Get-WmiObject -Class "Win32_ComputerSystem" | Select-Object -ExpandProperty Model
+
+#Define output file path
+$outputFile = "C:\TeamsOutput\test.csv"    # "
+
+# Not needed. Export-csv will create the file if its not there. 
+#Create output file if it doesn't exist
+#if (-not (Test-Path $outputFile)) {
+#    New-Item -Path $outputFile -ItemType File
+#}
+
+# Append system information to output file
+$data = [pscustomobject]@{
+    SerialNumber = $serialNumber
+    ProductId = $productId
+    HardwareHash = $hardwareHash
+    Model = $model
+}
+$data | Export-Csv -Path $outputFile -Append -NoTypeInformation
