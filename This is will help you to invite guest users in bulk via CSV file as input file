@@ -1,0 +1,16 @@
+This is will help you to invite guest users in bulk via CSV file as input file
+
+$invitations = import-csv C:\Users\User\Desktop\Invitebulk1.csv
+
+$messageInfo = New-Object Microsoft.Open.MSGraph.Model.InvitedUserMessageInfo
+
+$messageInfo.customizedMessageBody = "Hello, You are invited to the (Add Your company name). Please accept the invitation to acess the Teams and other resources"
+
+foreach ($email in $invitations)
+   {New-AzureADMSInvitation `
+      -InvitedUserEmailAddress $email.InvitedUserEmailAddress `
+      -InvitedUserDisplayName $email.Name `
+      -InviteRedirectUrl https://myapps.microsoft.com `
+      -InvitedUserMessageInfo $messageInfo `
+      -SendInvitationMessage $true
+   }
