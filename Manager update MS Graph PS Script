@@ -1,0 +1,50 @@
+Manager update MS Graph PS Script
+
+
+$CSVRecords = Import-CSV "C:\ScriptGroups\AAD_Attributes\UserManager.csv"
+$i = 0
+$TotalRows = $CSVRecords.Count
+ 
+# Array to store the status result
+$UpdateResult = @()
+
+# Iterate through CSVRecords (users) and set manager for users one by one
+foreach ($CSVRecord in $CSVRecords) {
+    $UserUPN = $CSVRecord.'UserUPN'
+    $ManagerUPN = $CSVRecord.'ManagerUPN'
+    
+    $i++
+    Write-Progress -Activity "Processing $UserUPN (Manager-$ManagerUPN)" -Status "$i out of $TotalRows users completed"
+    
+    try {
+      
+        # Set the new manager by reference
+
+        $NewManager = @{
+            "@odata.id" = "https://graph.microsoft.com/v1.0/users/$($ManagerUPN)"
+        }
+        Set-MgUserManagerByRef -UserId $UserUPN -BodyParameter $NewManager
+        
+        # Set update status
+        $UpdateStatus = "Success"
+    }
+    catch {
+        $UpdateStatus = "Failed: $_"
+    }
+    
+    # Add update status to the result array
+    $UpdateResult += [PSCustomObject]@{
+        UserUPN = $UserUPN
+        ManagerUPN = $ManagerUPN
+        Status = $UpdateStatus
+    }
+}
+
+# Display the update status result 
+$UpdateResult | Select-Object UserUPN, ManagerUPN, Status
+
+# Export the update status report to a CSV file
+$UpdateResult | Export-Csv "C:\ScriptGroups\AAD_Attributes\UserManagerReport.csv" -NoTypeInformation -Encoding UTF8
+
+
+
