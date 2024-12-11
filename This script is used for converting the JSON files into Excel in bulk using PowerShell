@@ -1,0 +1,22 @@
+This script is used for converting the JSON files into Excel in bulk using PowerShell
+
+We need to install below PowerShell module for this to work
+
+> Install-Module -Name ImportExcel -Scope CurrentUser or Install-Module -Name ImportExcel 
+
+$jsonDir = "D:\SlackChannelstoExcel\Json"
+$excelDir = "D:\SlackChannelstoExcel\Excel"
+
+if (!(Test-Path -Path $excelDir)) {
+    New-Item -ItemType Directory -Path $excelDir
+}
+
+$jsonFiles = Get-ChildItem -Path $jsonDir -Filter *.json
+
+foreach ($jsonFile in $jsonFiles) {
+    $jsonContent = Get-Content -Path $jsonFile.FullName -Raw | ConvertFrom-Json
+    $excelFileName = [System.IO.Path]::ChangeExtension($jsonFile.Name, ".xlsx")
+    $excelFilePath = Join-Path -Path $excelDir -ChildPath $excelFileName
+    $jsonContent | Export-Excel -Path $excelFilePath
+    Write-Output "Converted $($jsonFile.Name) to $excelFileName"
+}
