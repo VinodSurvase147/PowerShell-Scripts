@@ -1,0 +1,59 @@
+MSGraph PS Script to update user Dept JobTitle EmpID Country
+
+# Connect to Microsoft Graph
+Connect-MgGraph -Scopes User.ReadWrite.All
+
+# Read the CSV file
+$users = Import-Csv -Path "C:\ScriptGroups\AAD_Attributes\UserDeptJobTitle.csv"
+
+# Go through each user in the CSV and update the properties
+foreach ($user in $users) {
+    $userPrincipalName = $user.UserPrincipalName
+    $employeeId = $user.EmployeeId
+    $jobTitle = $user.JobTitle
+    $country = $user.Country
+    $department = $user.Department
+ 
+
+    # Check if the user exists
+    $existingUser = Get-MgUser -UserId $userPrincipalName -ErrorAction SilentlyContinue
+
+    if ($existingUser) {
+        # Check if the existing properties match the new values
+        $updateNeeded = $false
+
+        if ($existingUser.EmployeeId -ne $employeeId) {
+            $existingUser.EmployeeId = $employeeId
+            $updateNeeded = $true
+        }
+
+        if ($existingUser.JobTitle -ne $jobTitle) {
+            $existingUser.JobTitle = $jobTitle
+            $updateNeeded = $true
+        }
+
+        if ($existingUser.Country -ne $country) {
+            $existingUser.Country = $country
+            $updateNeeded = $true
+        }
+
+	 if ($existingUser.Department -ne $department) {
+            $existingUser.Department = $department
+            $updateNeeded = $true
+        }
+
+
+        if ($updateNeeded) {
+            # Update the user properties
+            Update-MgUser -UserId $userPrincipalName -EmployeeId $employeeId -JobTitle $jobTitle -Country $country -Department $department
+            Write-Host "User '$userPrincipalName' updated successfully." -ForegroundColor Green
+        }
+        else {
+            Write-Host "User '$userPrincipalName' properties are up to date." -ForegroundColor Cyan
+        }
+    }
+    else {
+        # User not found
+        Write-Host "User '$userPrincipalName' not found." -ForegroundColor Red
+    }
+}
