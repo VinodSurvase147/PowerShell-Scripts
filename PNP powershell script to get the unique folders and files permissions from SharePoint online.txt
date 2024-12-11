@@ -1,0 +1,74 @@
+PNP powershell script to get the unique folders and files permissions from SharePoint online
+
+
+# Import the PnP PowerShell module
+Import-Module PnP.PowerShell
+
+# Connect to your SharePoint site
+$siteUrl = "https://xmxmxxm.sharepoint.com/sites/EmailData"
+Connect-PnPOnline -Url $siteUrl -UseWebLogin
+
+# Get the document library where you want to check folder permissions
+$libraryName = "Documents"  # Change to the name of your document library
+
+# Get all items in the document library (change $libraryName as needed)
+$items = Get-PnPListItem -List $libraryName -PageSize 5000
+
+# Loop through each item and check if it has unique permissions
+foreach ($item in $items) {
+    # Get the item permissions
+    $hasUniquePermissions = Get-PnPProperty -ClientObject $item -Property HasUniqueRoleAssignments
+
+    # Check if it has unique permissions
+    if ($hasUniquePermissions) {
+        Write-Host "Folder/File: $($item.FieldValues['FileLeafRef']) has unique permissions"
+    }
+}
+
+
+
+==========
+
+
+
+# Import the PnP PowerShell module
+Import-Module PnP.PowerShell
+
+# Connect to your SharePoint site
+$siteUrl = "https://msmsms.sharepoint.com/sites/EmailData"
+Connect-PnPOnline -Url $siteUrl -UseWebLogin
+
+# Define the document library and output CSV file
+$libraryName = "Documents"  # Change to the name of your document library
+$outputCSV = "D:\M365Groups\UniquePermissionsFolders.csv"
+
+# Create an array to store folder URLs with unique permissions
+$folderData = @()
+
+# Get all items in the document library (change $libraryName as needed)
+$items = Get-PnPListItem -List $libraryName -PageSize 5000
+
+# Loop through each item and check if it has unique permissions
+foreach ($item in $items) {
+    # Get the item permissions
+    $hasUniquePermissions = Get-PnPProperty -ClientObject $item -Property HasUniqueRoleAssignments
+
+    # Check if it has unique permissions
+    if ($hasUniquePermissions) {
+        # Get the item URL
+        $itemUrl = $item.FieldValues['FileRef']
+
+        # Store the folder URL and its name
+        $folderData += [PSCustomObject]@{
+            FolderName = $item.FieldValues['FileLeafRef']
+            FolderUrl  = $siteUrl + $itemUrl
+        }
+    }
+}
+
+# Export folder URLs with unique permissions to a CSV file
+$folderData | Export-Csv -Path $outputCSV -NoTypeInformation
+
+Write-Host "Export complete! Folder URLs with unique permissions have been saved to $outputCSV"
+
+
