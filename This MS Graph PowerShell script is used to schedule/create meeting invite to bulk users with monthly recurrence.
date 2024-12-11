@@ -1,0 +1,70 @@
+This MS Graph PowerShell script is used to schedule/create meeting invite to bulk users with monthly recurrence.
+
+
+# Define the user ID or user principal name (email address)
+$userId = "user@domain.com"
+
+# Define the event details
+$event = @{
+    Subject = "Project Update Meeting"
+    Body = @{
+        ContentType = "HTML"
+        Content = "Let's discuss the project updates."
+    }
+    Start = @{
+        DateTime = "2024-08-25T14:00:00"
+        TimeZone = "Pacific Standard Time"
+    }
+    End = @{
+        DateTime = "2024-08-25T15:00:00"
+        TimeZone = "Pacific Standard Time"
+    }
+    Location = @{
+        DisplayName = "Conference Room"
+    }
+    Attendees = @(
+        @{
+            EmailAddress = @{
+                Address = "user1@hotmail.com"
+            }
+            Type = "Required"
+        },
+        @{
+            EmailAddress = @{
+                Address = "user2@gmail.com"
+            }
+            Type = "Optional"
+        },
+        @{
+            EmailAddress = @{
+                Address = "user3@outlook.com"
+            }
+            Type = "Required"
+        },
+        @{
+            EmailAddress = @{
+                Address = "user4@domain.com"
+            }
+            Type = "Required"
+        }
+    )
+    # Recurrence details
+    Recurrence = @{
+        Pattern = @{
+            Type = "absoluteMonthly"
+            Interval = 1
+            DayOfMonth = 25
+        }
+        Range = @{
+            Type = "endDate"
+            StartDate = "2024-08-25"
+            EndDate = "2025-08-25"
+        }
+    }
+    AllowNewTimeProposals = $true
+    IsOnlineMeeting = $true
+    OnlineMeetingProvider = "teamsForBusiness"
+}
+
+# Create the event
+New-MgUserEvent -UserId $userId -BodyParameter $event
