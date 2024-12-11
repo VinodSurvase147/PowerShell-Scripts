@@ -1,0 +1,191 @@
+This script is to remove a user from Group chat via MS graph powershell
+
+# Import the required module
+Import-Module Microsoft.Graph.Teams
+
+# Define the display name of the user to be removed
+$userToRemoveDisplayName = "Vinod Survase"
+
+# Define the topic name of the chat
+$chatName = "P"
+
+# Initialize a report array
+$report = @()
+
+# Retrieve the existing group chat by topic name
+$existingChats = Get-MgChat -Filter "topic eq '$chatName'"
+
+# Ensure the chat exists
+if ($existingChats) {
+    foreach ($existingChat in $existingChats) {
+        $chatId = $existingChat.Id
+
+        # Retrieve the members of the chat
+        $members = Get-MgChatMember -ChatId $chatId
+
+        # Find the user in the chat members
+        $memberToRemove = $members | Where-Object { $_.DisplayName -eq $userToRemoveDisplayName }
+
+        if ($memberToRemove) {
+            $conversationMemberId = $memberToRemove.Id
+
+            # Remove the user from the group chat
+            try {
+                Remove-MgChatMember -ChatId $chatId -ConversationMemberId $conversationMemberId -Confirm:$false
+                $report += [PSCustomObject]@{
+                    ChatName = $chatName
+                    Status = "Removed"
+                    UserDisplayName = $userToRemoveDisplayName
+                    ConversationMemberId = $conversationMemberId
+                }
+                Write-Host "User '$userToRemoveDisplayName' has been removed from the chat '$chatName'."
+            } catch {
+                $report += [PSCustomObject]@{
+                    ChatName = $chatName
+                    Status = "Failed"
+                    UserDisplayName = $userToRemoveDisplayName
+                    ErrorMessage = $_.Exception.Message
+                }
+                Write-Host "Failed to remove user '$userToRemoveDisplayName' from the chat '$chatName'."
+            }
+        } else {
+            $report += [PSCustomObject]@{
+                ChatName = $chatName
+                Status = "NotFound"
+                UserDisplayName = $userToRemoveDisplayName
+                ErrorMessage = "User not found in chat."
+            }
+            Write-Host "User '$userToRemoveDisplayName' not found in the chat '$chatName'."
+        }
+    }
+} else {
+    $report += [PSCustomObject]@{
+        ChatName = $chatName
+        Status = "NotFound"
+        ErrorMessage = "Chat not found."
+    }
+    Write-Host "Chat '$chatName' not found."
+}
+
+# Output the report
+$report | Format-Table -AutoSize
+
+# Optionally, export the report to a CSV file
+$report | Export-Csv -Path "D:\M365Groups\GroupChatRemoveReport.csv" -NoTypeInformation
+
+
+
+============
+
+Using CSV file to remove Group chat users
+
+# Import the required module
+Import-Module Microsoft.Graph.Teams
+
+# Define the path to your CSV file
+$csvPath = "D:\M365Groups\GroupChatDN.csv"
+
+# Import the CSV file
+$removals = Import-Csv -Path $csvPath
+
+# Initialize a report array
+$report = @()
+
+# Loop through each row in the CSV
+foreach ($removal in $removals) {
+    $chatName = $removal.ChatName
+    $userToRemoveDisplayName = $removal.UserToRemoveDisplayName
+
+    # Retrieve the existing group chat by topic name
+    try {
+        $existingChats = Get-MgChat -Filter "topic eq '$chatName'"
+    } catch {
+        $existingChats = $null
+        $report += [PSCustomObject]@{
+            ChatName = $chatName
+            Status = "Error"
+            UserDisplayName = $userToRemoveDisplayName
+            ErrorMessage = $_.Exception.Message
+        }
+        Write-Host "Error retrieving chat '$chatName': $_.Exception.Message"
+    }
+
+    # Ensure the chat exists
+    if ($existingChats -ne $null -and $existingChats.Count -gt 0) {
+        foreach ($existingChat in $existingChats) {
+            $chatId = $existingChat.Id
+
+            # Retrieve the members of the chat
+            try {
+                $members = Get-MgChatMember -ChatId $chatId
+            } catch {
+                $members = $null
+                $report += [PSCustomObject]@{
+                    ChatName = $chatName
+                    Status = "Error"
+                    UserDisplayName = $userToRemoveDisplayName
+                    ErrorMessage = $_.Exception.Message
+                }
+                Write-Host "Error retrieving members for chat '$chatName': $_.Exception.Message"
+            }
+
+            # Find the user in the chat members
+            if ($members -ne $null -and $members.Count -gt 0) {
+                $memberToRemove = $members | Where-Object { $_.DisplayName -eq $userToRemoveDisplayName }
+
+                if ($memberToRemove -ne $null) {
+                    $conversationMemberId = $memberToRemove.Id
+
+                    # Remove the user from the group chat
+                    try {
+                        Remove-MgChatMember -ChatId $chatId -ConversationMemberId $conversationMemberId -Confirm:$false
+                        $report += [PSCustomObject]@{
+                            ChatName = $chatName
+                            Status = "Removed"
+                            UserDisplayName = $userToRemoveDisplayName
+                            ConversationMemberId = $conversationMemberId
+                        }
+                        Write-Host "User '$userToRemoveDisplayName' has been removed from the chat '$chatName'."
+                    } catch {
+                        $report += [PSCustomObject]@{
+                            ChatName = $chatName
+                            Status = "Failed"
+                            UserDisplayName = $userToRemoveDisplayName
+                            ErrorMessage = $_.Exception.Message
+                        }
+                        Write-Host "Failed to remove user '$userToRemoveDisplayName' from the chat '$chatName'."
+                    }
+                } else {
+                    $report += [PSCustomObject]@{
+                        ChatName = $chatName
+                        Status = "NotFound"
+                        UserDisplayName = $userToRemoveDisplayName
+                        ErrorMessage = "User not found in chat."
+                    }
+                    Write-Host "User '$userToRemoveDisplayName' not found in the chat '$chatName'."
+                }
+            } else {
+                $report += [PSCustomObject]@{
+                    ChatName = $chatName
+                    Status = "Error"
+                    UserDisplayName = $userToRemoveDisplayName
+                    ErrorMessage = "Failed to retrieve chat members."
+                }
+                Write-Host "Failed to retrieve members for chat '$chatName'."
+            }
+        }
+    } else {
+        $report += [PSCustomObject]@{
+            ChatName = $chatName
+            Status = "NotFound"
+            ErrorMessage = "Chat not found."
+        }
+        Write-Host "Chat '$chatName' not found."
+    }
+}
+
+# Output the report
+$report | Format-Table -AutoSize
+
+# Optionally, export the report to a CSV file
+$report | Export-Csv -Path "D:\M365Groups\GroupChatRemoveReport.csv" -NoTypeInformation
