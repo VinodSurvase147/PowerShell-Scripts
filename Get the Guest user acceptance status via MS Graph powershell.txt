@@ -1,0 +1,17 @@
+Get the Guest user acceptance status via MS Graph powershell
+
+# Ensure you have the Microsoft.Graph module installed and imported
+# Install-Module Microsoft.Graph -Scope CurrentUser
+
+# Connect to Microsoft Graph
+Connect-MgGraph -Scopes "User.Read.All"
+
+# Retrieve guest users and their invitation status
+$guestUsers = Get-MgUser -Filter "userType eq 'Guest'" -Property Id, DisplayName, Mail, ExternalUserState, ExternalUserStateChangeDateTime -All
+
+# Process and display the information
+$guestUsers | Select-Object DisplayName, Mail, ExternalUserState, ExternalUserStateChangeDateTime | Format-Table
+
+# Optionally export the results to a CSV file
+$guestUsers | Select-Object DisplayName, Mail, ExternalUserState, ExternalUserStateChangeDateTime | Export-Csv -Path "GuestUsersInvitationStatus.csv" -NoTypeInformation -Encoding UTF8
+
