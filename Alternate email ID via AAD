@@ -1,0 +1,48 @@
+This is the script to add/change new alternate email address to user accounts via Azure AD PowerShell script. 
+
+
+
+# Connect to Azure AD
+Connect-AzureAD 
+
+# Input CSV file path
+$inputCsvPath = "C:\SA\AllServiceAccounts.csv"
+
+# Read input CSV file
+$userData = Import-Csv -Path $inputCsvPath
+
+# Iterate through each user in the CSV and update OtherMails attribute
+foreach ($user in $userData) {
+    $userPrincipalName = $user.UserPrincipalName
+    $alternateEmail = $user.AlternateEmail
+
+    # Check if the user has an alternate email address
+    if ($alternateEmail -ne "") {
+        # Get the user by UserPrincipalName
+        $azureADUser = Get-AzureADUser -Filter "UserPrincipalName eq '$userPrincipalName'"
+
+        if ($azureADUser) {
+            # Add the alternate email address to OtherMails attribute
+            $newOtherMails = $azureADUser.OtherMails + $alternateEmail
+
+            # Update OtherMails attribute for the user
+            Set-AzureADUser -OtherMails $newOtherMails -ObjectId $userPrincipalName
+
+            Write-Host "Updated OtherMails for user $userPrincipalName with alternate email $alternateEmail"
+        } else {
+            Write-Host "User $userPrincipalName not found in Azure AD"
+        }
+    } else {
+        Write-Host "No alternate email address provided for user $userPrincipalName"
+    }
+}
+
+# Disconnect from Azure AD
+Disconnect-AzureAD
+
+========
+
+Here is the script to get those user accounts whose OtherMails is added/updated by using above script. 
+
+
+Get-AzureADUser | select UserPrincipalName , @{n='OtherMails'; e={$_.OtherMails -join ' '}} | export-csv azureadusers.csv 
