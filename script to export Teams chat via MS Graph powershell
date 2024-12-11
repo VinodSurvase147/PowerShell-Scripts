@@ -1,0 +1,519 @@
+This is the script to export Teams chat via MS Graph powershell
+
+App ID
+
+099b0f8a-62d3-437e-8a3f-a04f98236ed7
+
+Tenant ID
+
+c9b9b345-62c6-40f8-8a4c-f2eaba61520d
+
+Secrets
+
+47f8Q~jYIp_4NKLEFzAwDsmAb6Lm1xmxmxmxmxmxmx
+
+============
+
+Below script export one on one chat for Teams chats between 2 users via MS Graph PowerShell
+
+
+
+
+# Replace with your Azure AD app details
+$clientId = "099b0f8a-62d3-437e-8a3f-a04f98236ed7"
+$tenantId = "c9b9b345-62c6-40f8-8a4c-f2eaba61520d"
+$clientSecret = "47f8Q~jYIp_4NKLEFzAwDsxmxxnxmxx"
+
+# Token endpoint for OAuth
+$tokenEndpoint = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token"
+
+# Request body for the token
+$body = @{
+    grant_type    = "client_credentials"
+    scope         = "https://graph.microsoft.com/.default"
+    client_id     = $clientId
+    client_secret = $clientSecret
+}
+
+# Get the access token
+$response = Invoke-RestMethod -Method Post -Uri $tokenEndpoint -ContentType "application/x-www-form-urlencoded" -Body $body
+$accessToken = $response.access_token
+
+# Make the request to Graph API
+$headers = @{
+    Authorization = "Bearer $accessToken"
+    ContentType   = "application/json"
+}
+
+# Function to get the chat ID for a one-on-one chat between two users
+function Get-OneOnOneChatId {
+    param (
+        [string]$userId1,
+        [string]$userId2
+    )
+    
+    # Define the Graph API endpoint for listing user chats
+    $userChatsEndpoint = "https://graph.microsoft.com/v1.0/users/$userId1/chats"
+    
+    # Get the list of chats for the first user
+    $chatsResponse = Invoke-RestMethod -Uri $userChatsEndpoint -Headers $headers -Method Get
+    $chats = $chatsResponse.value
+    
+    # Find the chat ID for the one-on-one chat with the second user
+    foreach ($chat in $chats) {
+        if ($chat.chatType -eq "oneOnOne") {
+            $chatMembersEndpoint = "https://graph.microsoft.com/v1.0/chats/$($chat.id)/members"
+            $membersResponse = Invoke-RestMethod -Uri $chatMembersEndpoint -Headers $headers -Method Get
+            $members = $membersResponse.value
+            $memberIds = $members | ForEach-Object { $_.email }
+            if ($memberIds -contains $userId2) {
+                return $chat.id
+            }
+        }
+    }
+    return $null
+}
+
+# Function to get chat messages for a given chat ID
+function Get-ChatMessages {
+    param (
+        [string]$chatId
+    )
+    
+    $graphEndpoint = "https://graph.microsoft.com/v1.0/chats/$chatId/messages"
+    $response = Invoke-RestMethod -Uri $graphEndpoint -Headers $headers -Method Get
+    return $response.value
+}
+
+# Prompt the user for user IDs
+$userId1 = Read-Host -Prompt "Enter the first user's ID (username@domain.com)"
+$userId2 = Read-Host -Prompt "Enter the second user's ID (username@domain.com)"
+
+# Get the chat ID for the one-on-one chat
+$chatId = Get-OneOnOneChatId -userId1 $userId1 -userId2 $userId2
+
+if ($chatId -ne $null) {
+    # Get the chat messages
+    $chatMessages = Get-ChatMessages -chatId $chatId
+
+    # Prepare data for CSV export
+    $csvData = @()
+    foreach ($message in $chatMessages) {
+        $csvData += [PSCustomObject]@{
+            Sender    = $message.from.user.displayName
+            Receiver  = if ($message.from.user.id -eq $userId1) { $userId2 } else { $userId1 }
+            TimeSent  = $message.createdDateTime
+            Message   = $message.body.content
+        }
+    }
+
+    # Export the data to a CSV file
+    $fileName = "TeamsChatMessages_${userId1}_${userId2}.csv"
+    $csvData | Export-Csv -Path $fileName -NoTypeInformation -Encoding UTF8
+
+    Write-Output "Teams chat messages exported to $fileName"
+} else {
+    Write-Output "No one-on-one chat found between $userId1 and $userId2"
+}
+
+
+
+===========================
+
+Group chat export via MS Graph powershell
+
+
+
+
+# Replace with your Azure AD app details
+$clientId = "099b0f8a-62d3-437e-8a3f-a04f98236ed7"
+$tenantId = "c9b9b345-62c6-40f8-8a4c-f2eaba61520d"
+$clientSecret = "47f8Q~jYIp_4NKLEFzAwDsmAxmxnxxmxjjxx"
+
+# Token endpoint for OAuth
+$tokenEndpoint = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token"
+
+# Request body for the token
+$body = @{
+    grant_type    = "client_credentials"
+    scope         = "https://graph.microsoft.com/.default"
+    client_id     = $clientId
+    client_secret = $clientSecret
+}
+
+# Get the access token
+$response = Invoke-RestMethod -Method Post -Uri $tokenEndpoint -ContentType "application/x-www-form-urlencoded" -Body $body
+$accessToken = $response.access_token
+
+# Make the request to Graph API
+$headers = @{
+    Authorization = "Bearer $accessToken"
+    ContentType   = "application/json"
+}
+
+# Function to get chat messages for a given chat ID
+function Get-ChatMessages {
+    param (
+        [string]$chatId
+    )
+    
+    $graphEndpoint = "https://graph.microsoft.com/v1.0/chats/$chatId/messages"
+    $response = Invoke-RestMethod -Uri $graphEndpoint -Headers $headers -Method Get
+    return $response.value
+}
+
+# Function to get chat members for a given chat ID
+function Get-ChatMembers {
+    param (
+        [string]$chatId
+    )
+    
+    $membersEndpoint = "https://graph.microsoft.com/v1.0/chats/$chatId/members"
+    $response = Invoke-RestMethod -Uri $membersEndpoint -Headers $headers -Method Get
+    return $response.value
+}
+
+# Function to get chat ID based on group name
+function Get-ChatIdByGroupName {
+    param (
+        [string]$userId,
+        [string]$groupName
+    )
+    
+    # Define the Graph API endpoint for listing user chats
+    $userChatsEndpoint = "https://graph.microsoft.com/v1.0/users/$userId/chats"
+    
+    # Get the list of chats for the user
+    $chatsResponse = Invoke-RestMethod -Uri $userChatsEndpoint -Headers $headers -Method Get
+    $chats = $chatsResponse.value
+    
+    # Find the chat ID for the group chat with the given name
+    foreach ($chat in $chats) {
+        if ($chat.chatType -eq "group" -and $chat.topic -eq $groupName) {
+            return $chat.id
+        }
+    }
+    return $null
+}
+
+# Prompt the user for their user ID and the group name
+$userId = Read-Host -Prompt "Enter your user ID (username@domain.com)"
+$groupName = Read-Host -Prompt "Enter the group name"
+
+# Get the chat ID for the group chat
+$chatId = Get-ChatIdByGroupName -userId $userId -groupName $groupName
+
+if ($chatId -ne $null) {
+    # Get the chat messages
+    $chatMessages = Get-ChatMessages -chatId $chatId
+
+    # Get the chat members
+    $chatMembers = Get-ChatMembers -chatId $chatId
+
+    # Prepare data for CSV export
+    $csvData = @()
+    foreach ($message in $chatMessages) {
+        $sender = $message.from.user.displayName
+        $receivers = ($chatMembers | Where-Object { $_.userId -ne $message.from.user.id } | ForEach-Object { $_.displayName }) -join "; "
+        $csvData += [PSCustomObject]@{
+            Sender    = $sender
+            Receivers = $receivers
+            TimeSent  = $message.createdDateTime
+            Message   = $message.body.content
+        }
+    }
+
+    # Export the data to a CSV file
+    $fileName = "TeamsGroupChatMessages_${groupName}.csv"
+    $csvData | Export-Csv -Path $fileName -NoTypeInformation -Encoding UTF8
+
+    Write-Output "Teams group chat messages exported to $fileName"
+} else {
+    Write-Output "No group chat found with the name $groupName"
+}
+
+
+
+=======================
+
+
+
+Microsoft Teams channel chat export via MS Graph powershell
+
+
+
+
+# Install Microsoft.Graph module if not already installed
+Install-Module Microsoft.Graph -Scope CurrentUser -Force
+
+
+
+
+# Replace with your Azure AD app details
+$clientId = "099b0f8a-62d3-437e-8a3f-a04f98236ed7"
+$tenantId = "c9b9b345-62c6-40f8-8a4c-f2eaba61520d"
+$clientSecret = "47f8Q~jYIp_4NKLEFzAwDsmAb6Lm1OFaq9e1lalq"
+
+# Token endpoint for OAuth
+$tokenEndpoint = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token"
+
+# Request body for the token
+$body = @{
+    grant_type    = "client_credentials"
+    scope         = "https://graph.microsoft.com/.default"
+    client_id     = $clientId
+    client_secret = $clientSecret
+}
+
+# Get the access token
+$response = Invoke-RestMethod -Method Post -Uri $tokenEndpoint -ContentType "application/x-www-form-urlencoded" -Body $body
+$accessToken = $response.access_token
+
+# Make the request to Graph API
+$headers = @{
+    Authorization = "Bearer $accessToken"
+    ContentType   = "application/json"
+}
+
+# Function to get channel messages for a given team and channel ID
+function Get-ChannelMessages {
+    param (
+        [string]$teamId,
+        [string]$channelId
+    )
+    
+    $graphEndpoint = "https://graph.microsoft.com/v1.0/teams/$teamId/channels/$channelId/messages"
+    $response = Invoke-RestMethod -Uri $graphEndpoint -Headers $headers -Method Get
+    return $response.value
+}
+
+# Function to get members of a channel for a given team and channel ID
+function Get-ChannelMembers {
+    param (
+        [string]$teamId,
+        [string]$channelId
+    )
+    
+    $membersEndpoint = "https://graph.microsoft.com/v1.0/teams/$teamId/channels/$channelId/members"
+    $response = Invoke-RestMethod -Uri $membersEndpoint -Headers $headers -Method Get
+    return $response.value
+}
+
+# Function to get team ID based on team name
+function Get-TeamIdByName {
+    param (
+        [string]$teamName
+    )
+    
+    # Define the Graph API endpoint for listing teams
+    $teamsEndpoint = "https://graph.microsoft.com/v1.0/teams"
+    
+    # Get the list of teams
+    $teamsResponse = Invoke-RestMethod -Uri $teamsEndpoint -Headers $headers -Method Get
+    $teams = $teamsResponse.value
+    
+    # Find the team ID for the given team name
+    foreach ($team in $teams) {
+        if ($team.displayName -eq $teamName) {
+            return $team.id
+        }
+    }
+    return $null
+}
+
+# Function to get channel ID based on team ID and channel name
+function Get-ChannelIdByName {
+    param (
+        [string]$teamId,
+        [string]$channelName
+    )
+    
+    # Define the Graph API endpoint for listing channels in a team
+    $channelsEndpoint = "https://graph.microsoft.com/v1.0/teams/$teamId/channels"
+    
+    # Get the list of channels for the team
+    $channelsResponse = Invoke-RestMethod -Uri $channelsEndpoint -Headers $headers -Method Get
+    $channels = $channelsResponse.value
+    
+    # Find the channel ID for the given channel name
+    foreach ($channel in $channels) {
+        if ($channel.displayName -eq $channelName) {
+            return $channel.id
+        }
+    }
+    return $null
+}
+
+# Prompt the user for the team name and channel name
+$teamName = Read-Host -Prompt "Enter the team name"
+$channelName = Read-Host -Prompt "Enter the channel name"
+
+# Get the team ID for the given team name
+$teamId = Get-TeamIdByName -teamName $teamName
+
+if ($teamId -ne $null) {
+    # Get the channel ID for the given channel name
+    $channelId = Get-ChannelIdByName -teamId $teamId -channelName $channelName
+
+    if ($channelId -ne $null) {
+        # Get the channel messages
+        $channelMessages = Get-ChannelMessages -teamId $teamId -channelId $channelId
+
+        # Get the channel members
+        $channelMembers = Get-ChannelMembers -teamId $teamId -channelId $channelId
+
+        # Prepare data for CSV export
+        $csvData = @()
+        foreach ($message in $channelMessages) {
+            $sender = $message.from.user.displayName
+            $receivers = ($channelMembers | Where-Object { $_.userId -ne $message.from.user.id } | ForEach-Object { $_.displayName }) -join "; "
+            $csvData += [PSCustomObject]@{
+                Sender    = $sender
+                Receivers = $receivers
+                TimeSent  = $message.createdDateTime
+                Message   = $message.body.content
+            }
+        }
+
+        # Export the data to a CSV file
+        $fileName = "TeamsChannelMessages_${teamName}_${channelName}.csv"
+        $csvData | Export-Csv -Path $fileName -NoTypeInformation -Encoding UTF8
+
+        Write-Output "Teams channel messages exported to $fileName"
+    } else {
+        Write-Output "No channel found with the name $channelName in team $teamName"
+    }
+} else {
+    Write-Output "No team found with the name $teamName"
+}
+
+
+
+==========
+
+
+Export Group chat in Teams for last 6 months via MS Graph powershell
+
+
+
+# Replace with your Azure AD app details
+$clientId = "cb25d5c1-ea28-46a1-bc6c-aed03113605a"
+$tenantId = "c9b2e971-e3f7-4532-8cbc-7d658551d558"
+$clientSecret = "C6O8Q~pomoiKSR32V7Z.zubttnSbPR8XS6_yPbXU"
+
+# Token endpoint for OAuth
+$tokenEndpoint = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token"
+
+# Request body for the token
+$body = @{
+    grant_type    = "client_credentials"
+    scope         = "https://graph.microsoft.com/.default"
+    client_id     = $clientId
+    client_secret = $clientSecret
+}
+
+# Get the access token
+$response = Invoke-RestMethod -Method Post -Uri $tokenEndpoint -ContentType "application/x-www-form-urlencoded" -Body $body
+$accessToken = $response.access_token
+
+# Make the request to Graph API
+$headers = @{
+    Authorization = "Bearer $accessToken"
+    ContentType   = "application/json"
+}
+
+# Function to get chat messages for a given chat ID and filter by date
+function Get-ChatMessages {
+    param (
+        [string]$chatId,
+        [datetime]$startDate
+    )
+    
+    $graphEndpoint = "https://graph.microsoft.com/v1.0/chats/$chatId/messages"
+    $messages = @()
+    $nextLink = $graphEndpoint
+
+    do {
+        $response = Invoke-RestMethod -Uri $nextLink -Headers $headers -Method Get
+        $messages += $response.value
+        $nextLink = $response.'@odata.nextLink'
+    } while ($nextLink)
+
+    # Filter messages by start date
+    $filteredMessages = $messages | Where-Object { [datetime]$_.'createdDateTime' -ge $startDate }
+    return $filteredMessages
+}
+
+# Function to get chat members for a given chat ID
+function Get-ChatMembers {
+    param (
+        [string]$chatId
+    )
+    
+    $membersEndpoint = "https://graph.microsoft.com/v1.0/chats/$chatId/members"
+    $response = Invoke-RestMethod -Uri $membersEndpoint -Headers $headers -Method Get
+    return $response.value
+}
+
+# Function to get chat ID based on group name
+function Get-ChatIdByGroupName {
+    param (
+        [string]$userId,
+        [string]$groupName
+    )
+    
+    # Define the Graph API endpoint for listing user chats
+    $userChatsEndpoint = "https://graph.microsoft.com/v1.0/users/$userId/chats"
+    
+    # Get the list of chats for the user
+    $chatsResponse = Invoke-RestMethod -Uri $userChatsEndpoint -Headers $headers -Method Get
+    $chats = $chatsResponse.value
+    
+    # Find the chat ID for the group chat with the given name
+    foreach ($chat in $chats) {
+        if ($chat.chatType -eq "group" -and $chat.topic -eq $groupName) {
+            return $chat.id
+        }
+    }
+    return $null
+}
+
+# Prompt the user for their user ID and the group name
+$userId = Read-Host -Prompt "Enter your user ID (username@domain.com)"
+$groupName = Read-Host -Prompt "Enter the group name"
+
+# Calculate the start date for messages (6 months ago from today)
+$startDate = (Get-Date).AddMonths(-6)
+
+# Get the chat ID for the group chat
+$chatId = Get-ChatIdByGroupName -userId $userId -groupName $groupName
+
+if ($chatId -ne $null) {
+    # Get the chat messages for the last 6 months
+    $chatMessages = Get-ChatMessages -chatId $chatId -startDate $startDate
+
+    # Get the chat members
+    $chatMembers = Get-ChatMembers -chatId $chatId
+
+    # Prepare data for CSV export
+    $csvData = @()
+    foreach ($message in $chatMessages) {
+        $sender = $message.from.user.displayName
+        $receivers = ($chatMembers | Where-Object { $_.userId -ne $message.from.user.id } | ForEach-Object { $_.displayName }) -join "; "
+        $csvData += [PSCustomObject]@{
+            Sender    = $sender
+            Receivers = $receivers
+            TimeSent  = $message.createdDateTime
+            Message   = $message.body.content
+        }
+    }
+
+    # Export the data to a CSV file
+    $fileName = "TeamsGroupChatMessages_${groupName}_Last6Months.csv"
+    $csvData | Export-Csv -Path $fileName -NoTypeInformation -Encoding UTF8
+
+    Write-Output "Teams group chat messages exported to $fileName"
+} else {
+    Write-Output "No group chat found with the name $groupName"
+}
+
