@@ -1,0 +1,40 @@
+Steps to enable the Encrypt button in Outlook for your entire Microsoft 365 tenant using PowerShell:
+
+1. Connect to Exchange Online PowerShell:
+   - Open PowerShell as an administrator.
+   - Run the following command to install the Exchange Online PowerShell module if you haven't already:
+   
+     Install-Module -Name ExchangeOnlineManagement
+   
+   - Connect to Exchange Online:
+   
+     Connect-ExchangeOnline -UserPrincipalName <your_admin_account> -ShowProgress $true
+   
+
+2. Enable the Encrypt Button:
+   - Run the following command to enable the Encrypt button in Outlook:
+   
+     Set-IRMConfiguration -SimplifiedClientAccessEnabled $true
+   
+
+3. Verify the Configuration:
+   - To ensure the Encrypt button is enabled, you can check the current IRM configuration:
+   
+     Get-IRMConfiguration
+   
+
+4. Disconnect from Exchange Online:
+   - Once you've made the changes, disconnect from the Exchange Online session:
+   
+     Disconnect-ExchangeOnline -Confirm:$false
+   
+
+These steps should enable the Encrypt button in Outlook for all users in your Microsoft 365 tenant
+
+https://learn.microsoft.com/en-us/purview/manage-office-365-message-encryption
+
+https://answers.microsoft.com/en-us/outlook_com/forum/all/no-option-to-encrypt-email-through-office-365/86259917-deb0-4fa2-a070-6f3bab4eedde
+
+If you encounter any issues, make sure that Azure Rights Management is correctly set up and that the necessary licenses are assigned to your users.
+
+If you have any more questions or need further assistance, feel free to ask!
