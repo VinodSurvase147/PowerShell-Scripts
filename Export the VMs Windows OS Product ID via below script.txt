@@ -1,0 +1,18 @@
+Export the VMs Windows OS Product ID via below script
+
+
+# Retrieve Windows Product ID from the registry
+
+try {
+
+    $productID = Get-ItemProperty -Path "HKLM:\Software\Microsoft\Windows NT\CurrentVersion" -ErrorAction Stop | Select-Object -ExpandProperty ProductId
+
+    Write-Output "Windows Product ID: $productID"
+
+}
+
+catch {
+
+    Write-Error "Unable to retrieve the Product ID. Error: $_"
+
+}
